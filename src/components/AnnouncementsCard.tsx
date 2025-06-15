@@ -63,7 +63,7 @@ export default function AnnouncementsCard() {
   }
 
   return (
-    <CardWrapper id="community-board" color="bgDark" className="border-l-4 border-accent h-full" count={announcements.length}>
+    <CardWrapper id="community-board" color="bgDark" className="border-l-4 border-accent h-[600px]" count={announcements.length}>
       <div className="flex items-center mb-6">
         <div className="w-3 h-3 bg-accent rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">📋 Community Board</h2>
@@ -151,7 +151,7 @@ export default function AnnouncementsCard() {
         </div>
       )}
 
-      <div className="space-y-3 max-h-64 overflow-y-auto">
+      <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2">
         {announcements.map((entry) => {
           const typeInfo = getTypeInfo(entry.type)
           const canDelete = isClient && isCurrentUserPost(entry.user)

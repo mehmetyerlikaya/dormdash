@@ -46,23 +46,22 @@ export default function UserSettings({ isOpen, onClose }: UserSettingsProps) {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-primary mb-1">Device ID (Read-only)</label>
+            <label className="block text-sm font-medium text-primary mb-1">Default Username</label>
             <input
               type="text"
               value={deviceId}
               readOnly
               className="w-full p-3 border border-gray-300 rounded-lg bg-bgDark text-gray-600"
             />
-            <p className="text-xs text-gray-500 mt-1">This unique ID identifies your device</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-primary mb-1">Display Name</label>
+            <label className="block text-sm font-medium text-primary mb-1">Nickname (change it)</label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Enter your display name"
+              placeholder="Enter your nickname"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
               maxLength={20}
             />

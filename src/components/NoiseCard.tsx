@@ -52,23 +52,23 @@ export default function NoiseCard() {
   }
 
   return (
-    <CardWrapper id="noise-reports" color="bgDark" className="border-l-4 border-warn h-full" count={noise.length}>
+    <CardWrapper id="noise-reports" color="bgDark" className="border-l-4 border-accent h-[600px]" count={noise.length}>
       <div className="flex items-center mb-6">
-        <div className="w-3 h-3 bg-warn rounded-full mr-3"></div>
+        <div className="w-3 h-3 bg-accent rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">🔊 Noise Reports</h2>
       </div>
 
       {!showForm ? (
         <button
-          onClick={handleShowForm}
-          disabled={!canReport || !isClient}
+          onClick={() => setShowForm(true)}
+          disabled={!isClient}
           className={`w-full p-3 rounded-lg mb-4 font-medium transition-all duration-200 ${
-            !canReport || !isClient
+            !isClient
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-warn hover:bg-red-600 text-white shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+              : "bg-accent hover:bg-teal-600 text-white shadow-md hover:shadow-lg transform hover:scale-[1.02]"
           }`}
         >
-          {!isClient ? "Loading..." : canReport ? "📢 Report Noise Issue" : "Wait 2 minutes"}
+          {!isClient ? "Loading..." : "➕ Report Noise"}
         </button>
       ) : (
         <div className="mb-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -89,7 +89,7 @@ export default function NoiseCard() {
               className={`flex-1 p-2 rounded-lg font-medium transition-colors ${
                 isSubmitting || !description.trim() || !isClient
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-warn hover:bg-red-600 text-white"
+                  : "bg-accent hover:bg-teal-600 text-white"
               }`}
             >
               {isSubmitting ? "Reporting..." : "Submit Report"}
@@ -105,7 +105,7 @@ export default function NoiseCard() {
         </div>
       )}
 
-      <div className="space-y-3 max-h-64 overflow-y-auto">
+      <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2">
         {noise.map((entry) => {
           const canDelete = isClient && isCurrentUserPost(entry.user)
 
@@ -128,7 +128,7 @@ export default function NoiseCard() {
                 {canDelete && (
                   <button
                     onClick={() => handleDelete(entry.id)}
-                    className="text-warn text-xs hover:text-red-700 ml-2 px-2 py-1 hover:bg-red-50 rounded transition-colors"
+                    className="text-accent text-xs hover:text-teal-700 ml-2 px-2 py-1 hover:bg-teal-50 rounded transition-colors"
                     title="Delete your post"
                   >
                     Delete

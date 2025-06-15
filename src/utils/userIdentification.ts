@@ -7,11 +7,9 @@ export function getDeviceUserId(): string {
     let userId = localStorage.getItem("dorm-dashboard-user-id")
 
     if (!userId) {
-      // Generate a more robust device fingerprint
-      const fingerprint = generateDeviceFingerprint()
-      const hash = hashString(fingerprint)
-      const userNumber = Math.abs(hash % 9999) + 1
-      userId = `user-${userNumber.toString().padStart(4, "0")}`
+      // Generate a random 4-digit number
+      const randomNum = Math.floor(Math.random() * 10000)
+      userId = `dormie-${randomNum.toString().padStart(4, "0")}`
       localStorage.setItem("dorm-dashboard-user-id", userId)
     }
 

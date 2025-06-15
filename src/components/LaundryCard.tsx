@@ -211,15 +211,18 @@ export default function LaundryCard() {
   return (
     <CardWrapper id="laundry-machines" color="white" className="border-l-4 border-accent shadow-lg" count={totalIncidents}>
       {/* Header Section */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-accent rounded-full mr-4"></div>
-          <h2 className="text-3xl font-bold text-primary">👕 Laundry Machines</h2>
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-4 h-4 bg-accent rounded-full mr-4"></div>
+            <h2 className="text-3xl font-bold text-primary">👕 Laundry Machines</h2>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        {/* Status tags: stacked on mobile, inline on desktop */}
+        <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-end sm:items-center sm:gap-3">
           {/* Main availability counter */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 px-4 py-2 rounded-xl shadow-sm">
-            <div className="flex items-center gap-2">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 px-4 py-2 rounded-xl shadow-sm w-full sm:w-auto">
+            <div className="flex items-center gap-2 justify-center">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-lg font-bold text-green-800">
                 {laundry.filter((m) => m.status === "free").length}
@@ -231,29 +234,25 @@ export default function LaundryCard() {
               <span className="text-sm font-medium text-green-700">available</span>
             </div>
           </div>
-
           {/* Quick status breakdown */}
-          <div className="flex items-center gap-2 text-xs">
-            {laundry.filter((m) => m.status === "running").length > 0 && (
-              <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="font-medium text-blue-700">
-                  {laundry.filter((m) => m.status === "running").length} in use
-                </span>
-              </div>
-            )}
-            {laundry.filter((m) => m.status === "finishedGrace").length > 0 && (
-              <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="font-medium text-orange-700">
-                  {laundry.filter((m) => m.status === "finishedGrace").length} ready
-                </span>
-              </div>
-            )}
-          </div>
+          {laundry.filter((m) => m.status === "running").length > 0 && (
+            <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-full sm:w-auto justify-center">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="font-medium text-blue-700">
+                {laundry.filter((m) => m.status === "running").length} in use
+              </span>
+            </div>
+          )}
+          {laundry.filter((m) => m.status === "finishedGrace").length > 0 && (
+            <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200 w-full sm:w-auto justify-center">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <span className="font-medium text-orange-700">
+                {laundry.filter((m) => m.status === "finishedGrace").length} ready
+              </span>
+            </div>
+          )}
         </div>
       </div>
-
       {/* Machines Grid - Better responsive layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {laundry.map((machine) => {

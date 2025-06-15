@@ -1,30 +1,82 @@
-# Next.js App Router
+# DormDash - Dormitory Laundry Management
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A real-time web app for managing dormitory laundry machines. Built with Next.js and Supabase.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/temhem176-gmailcoms-projects/v0-next-js-app-router)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/3q84zBXjXDD)
+## Features
 
-## Overview
+- Real-time machine status updates
+- Check-in/out system for washers and dryers
+- Grace period notifications
+- Mobile-friendly interface
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Tech Stack
+
+- Next.js 15
+- Supabase (Database & Real-time)
+- TailwindCSS
+- TypeScript
+
+## Getting Started
+
+1. Clone the repo
+```bash
+git clone https://github.com/mehmetyerlikaya/dormdash.git
+```
+
+2. Install dependencies
+```bash
+pnpm install
+```
+
+3. Set up environment variables
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. Run the development server
+```bash
+pnpm dev
+```
 
 ## Deployment
 
-Your project is live at:
+The app is configured for Vercel deployment. Just connect your GitHub repo to Vercel and add the environment variables.
 
-**[https://vercel.com/temhem176-gmailcoms-projects/v0-next-js-app-router](https://vercel.com/temhem176-gmailcoms-projects/v0-next-js-app-router)**
+---
 
-## Build your app
+## Machine Status Logic & Scenarios
 
-Continue building your app on:
+### Statuses
+- `free` → `running` → `finishedGrace` → `free`
 
-**[https://v0.dev/chat/projects/3q84zBXjXDD](https://v0.dev/chat/projects/3q84zBXjXDD)**
+### How Transitions Happen
+- **free → running**: User starts a machine via check-in page. Status and timer are set in the database.
+- **running → finishedGrace**: Happens automatically. A server-side background process (MachineStatusManager) checks every 30 seconds. When the timer expires, status changes to `finishedGrace` and a 5-minute grace period starts.
+- **finishedGrace → free**: Also automatic. After the grace period, the server process sets the machine to `free` and clears user info. The original user can also manually mark as collected, which frees the machine immediately.
 
-## How It Works
+### Timing
+- Automatic transitions are checked every 30 seconds. Status changes are visible to all users in real time (usually within 0–30 seconds, average 15s).
+- No one needs to refresh the page; updates are pushed via Supabase real-time subscriptions.
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### User Scenarios
+| Status           | Who Can Act?         | What Happens Next?                |
+|------------------|----------------------|-----------------------------------|
+| free             | Anyone               | Can start a new session           |
+| running          | Owner                | Can stop early or wait            |
+| running          | Others               | See warning, cannot act           |
+| finishedGrace    | Owner                | Can mark as collected             |
+| finishedGrace    | Others               | See warning, cannot act           |
+| free (after grace)| Anyone              | Can start a new session           |
+
+### Technical Details
+- The MachineStatusManager (see `src/lib/machineStatusManager.ts`) runs on the server and checks machine timers every 30 seconds.
+- All status transitions after a user starts a machine are handled automatically by this process.
+- No user action is required for machines to become available after timer/grace period expiry.
+- All clients receive updates in real time via Supabase subscriptions.
+
+---
+
+## License
+
+MIT
