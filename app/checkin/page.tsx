@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react"
 import useSupabaseData from "@/src/hooks/useSupabaseData"
 import useCountdown from "@/src/hooks/useCountdown"
 import { canAdjustTime, getOwnershipDisplay, getTimeUntilAdjustmentAvailable, isCurrentUserOwner } from "@/src/utils/machineOwnership"
+import { getDeviceUserId } from "@/src/utils/userIdentification"
 
 export default function CheckInPage() {
   const searchParams = useSearchParams()
@@ -19,6 +20,11 @@ export default function CheckInPage() {
   const [adjustTime, setAdjustTime] = useState("")
   const [isAdjusting, setIsAdjusting] = useState(false)
   const [adjustResult, setAdjustResult] = useState("")
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const countdown = useCountdown(machine?.endAt, machine?.graceEndAt)
 
@@ -207,6 +213,17 @@ export default function CheckInPage() {
       const newNumber = originalNumber + 4 // Map 1->5, 2->6, 3->7, 4->8
       return `Dryer ${newNumber}`
     }
+  }
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading && !machine) {

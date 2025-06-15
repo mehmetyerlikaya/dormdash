@@ -17,12 +17,15 @@ export function getDeviceUserId(): string {
 
     return userId
   } catch (error) {
+    console.warn("Error getting device user ID:", error)
     return "anonymous-fallback"
   }
 }
 
 // Generate a device fingerprint
 function generateDeviceFingerprint(): string {
+  if (typeof window === "undefined") return "ssr-fingerprint"
+
   const canvas = document.createElement("canvas")
   const ctx = canvas.getContext("2d")
   let fingerprint = ""

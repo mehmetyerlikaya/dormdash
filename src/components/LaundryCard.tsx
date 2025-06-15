@@ -171,8 +171,6 @@ function MachineStatus({ machine }: { machine: any }) {
   )
 }
 
-
-
 export default function LaundryCard() {
   const { laundry, incidents, deleteIncident, adjustMachineTime } = useSupabaseData()
   const [adjustModalOpen, setAdjustModalOpen] = useState(false)

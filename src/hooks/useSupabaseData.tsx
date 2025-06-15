@@ -268,13 +268,11 @@ export default function useSupabaseData() {
     setIncidents(incidentsResult.data?.map(dbToIncident) || [])
   }
 
-  // Set up real-time subscriptions with table-specific updates
+  // Setup real-time subscriptions
   useEffect(() => {
-    if (subscriptionSetupRef.current) {
-      return
-    }
-
+    if (subscriptionSetupRef.current) return
     subscriptionSetupRef.current = true
+
     console.log("🔄 Setting up subscription manager...")
 
     const subscriptionManager = SubscriptionManager.getInstance()
@@ -301,9 +299,7 @@ export default function useSupabaseData() {
 
   // Set up machine status monitoring (only once)
   useEffect(() => {
-    if (statusManagerSetupRef.current) {
-      return
-    }
+    if (statusManagerSetupRef.current) return
 
     statusManagerSetupRef.current = true
     console.log("🔄 Setting up machine status manager...")
