@@ -6,6 +6,7 @@ import type { Database } from "@/src/lib/supabase"
 import SubscriptionManager from "@/src/lib/subscriptionManager"
 import MachineStatusManager from "@/src/lib/machineStatusManager"
 import parseDuration from "@/src/utils/parseDuration"
+import { getDeviceUserId } from "@/src/utils/userIdentification"
 
 // Type definitions
 export interface Machine {
@@ -16,6 +17,8 @@ export interface Machine {
   endAt?: Date
   graceEndAt?: Date
   updatedAt: Date
+  startedByUserId?: string
+  startedByDeviceFingerprint?: string
 }
 
 export interface NoiseEntry {
@@ -72,6 +75,8 @@ const dbToMachine = (row: Database["public"]["Tables"]["machines"]["Row"]): Mach
     endAt: row.end_at ? new Date(row.end_at) : undefined,
     graceEndAt: graceEndAt,
     updatedAt: new Date(row.updated_at),
+    startedByUserId: (row as any).started_by_user_id || undefined,
+    startedByDeviceFingerprint: (row as any).started_by_device_fingerprint || undefined,
   }
 }
 
@@ -131,9 +136,10 @@ export default function useSupabaseData() {
   const isMountedRef = useRef(true)
 
   // Debounced data loading function with selective loading
-  const loadAllData = useCallback(async (specificTable?: string) => {
+  const loadAllData = useCallback(async (specificTable?: string, forceRefresh = false) => {
     const now = Date.now()
-    if (isLoadingDataRef.current || now - lastLoadTimeRef.current < 1000) {
+    // Skip debounce for manual refresh (forceRefresh = true)
+    if (!forceRefresh && (isLoadingDataRef.current || now - lastLoadTimeRef.current < 1000)) {
       console.log("⏭️ Skipping data load (too recent or in progress)")
       return
     }
@@ -337,6 +343,7 @@ export default function useSupabaseData() {
         if (machine.status === "free") {
           const startAt = new Date()
           const endAt = new Date(startAt.getTime() + 60 * 60 * 1000)
+          const currentUserId = getDeviceUserId()
 
           optimisticUpdate = {
             ...machine,
@@ -345,18 +352,30 @@ export default function useSupabaseData() {
             endAt,
             graceEndAt: undefined,
             updatedAt: new Date(),
+            startedByUserId: currentUserId,
+            startedByDeviceFingerprint: currentUserId, // Using same value for now
           }
 
           updateData = {
             status: "running",
             start_at: startAt.toISOString(),
             end_at: endAt.toISOString(),
+            started_by_user_id: currentUserId,
+            started_by_device_fingerprint: currentUserId,
           }
 
           if (hasGraceEndColumn) {
             updateData.grace_end_at = null
           }
-        } else {
+        } else if (machine.status === "running") {
+          // Running machine - only owner can stop it
+          const currentUserId = getDeviceUserId()
+          if (machine.startedByUserId !== currentUserId) {
+            setError("This machine is currently in use by another user")
+            return false
+          }
+
+          // Owner stopping their running machine
           optimisticUpdate = {
             ...machine,
             status: "free",
@@ -364,17 +383,56 @@ export default function useSupabaseData() {
             endAt: undefined,
             graceEndAt: undefined,
             updatedAt: new Date(),
+            startedByUserId: undefined,
+            startedByDeviceFingerprint: undefined,
           }
 
           updateData = {
             status: "free",
             start_at: null,
             end_at: null,
+            started_by_user_id: null,
+            started_by_device_fingerprint: null,
           }
 
           if (hasGraceEndColumn) {
             updateData.grace_end_at = null
           }
+        } else if (machine.status === "finishedGrace") {
+          // Grace period - only owner can collect items
+          const currentUserId = getDeviceUserId()
+          if (machine.startedByUserId !== currentUserId) {
+            setError("Only the machine owner can collect their items")
+            return false
+          }
+
+          // Owner collecting their items
+          optimisticUpdate = {
+            ...machine,
+            status: "free",
+            startAt: undefined,
+            endAt: undefined,
+            graceEndAt: undefined,
+            updatedAt: new Date(),
+            startedByUserId: undefined,
+            startedByDeviceFingerprint: undefined,
+          }
+
+          updateData = {
+            status: "free",
+            start_at: null,
+            end_at: null,
+            started_by_user_id: null,
+            started_by_device_fingerprint: null,
+          }
+
+          if (hasGraceEndColumn) {
+            updateData.grace_end_at = null
+          }
+        } else {
+          // This shouldn't happen with proper UI controls
+          setError("Invalid machine status for this operation")
+          return false
         }
 
         // Apply optimistic update
@@ -415,9 +473,16 @@ export default function useSupabaseData() {
           return false
         }
 
+        // Check if machine is available
+        if (machine.status !== "free") {
+          setError("This machine is currently in use")
+          return false
+        }
+
         const durationSeconds = parseDuration(durationStr)
         const startAt = new Date()
         const endAt = new Date(startAt.getTime() + durationSeconds * 1000)
+        const currentUserId = getDeviceUserId()
 
         const optimisticUpdate = {
           ...machine,
@@ -426,6 +491,8 @@ export default function useSupabaseData() {
           endAt,
           graceEndAt: undefined,
           updatedAt: new Date(),
+          startedByUserId: currentUserId,
+          startedByDeviceFingerprint: currentUserId,
         }
 
         setLaundry((prev) => prev.map((m) => (m.id === id ? optimisticUpdate : m)))
@@ -434,6 +501,8 @@ export default function useSupabaseData() {
           status: "running",
           start_at: startAt.toISOString(),
           end_at: endAt.toISOString(),
+          started_by_user_id: currentUserId,
+          started_by_device_fingerprint: currentUserId,
         }
 
         if (hasGraceEndColumn) {
@@ -464,6 +533,64 @@ export default function useSupabaseData() {
       }
     },
     [laundry, hasGraceEndColumn],
+  )
+
+  // New function to adjust machine time (only for machines you started)
+  const adjustMachineTime = useCallback(
+    async (id: string, newMinutes: number) => {
+      try {
+        const machine = laundry.find((m) => m.id === id)
+        if (!machine) {
+          return { success: false, error: "Machine not found" }
+        }
+
+        const currentUserId = getDeviceUserId()
+
+        // Check ownership - only the user who started the machine can adjust it
+        if (machine.startedByUserId !== currentUserId) {
+          return { success: false, error: "You can only adjust machines you started" }
+        }
+
+        // Validate time range (1-120 minutes for adjustment)
+        if (newMinutes < 1 || newMinutes > 120) {
+          return { success: false, error: "Please enter a number between 1-120 minutes" }
+        }
+
+        // Calculate new end time based on the new total duration from start time
+        const now = new Date()
+        const startTime = machine.startAt || now
+        const newEndAt = new Date(startTime.getTime() + newMinutes * 60 * 1000)
+
+        const optimisticUpdate = {
+          ...machine,
+          endAt: newEndAt,
+          updatedAt: new Date(),
+        }
+
+        // Apply optimistic update
+        setLaundry((prev) => prev.map((m) => (m.id === id ? optimisticUpdate : m)))
+
+        // Send update to database
+        const { error } = await supabase
+          .from("machines")
+          .update({ end_at: newEndAt.toISOString() })
+          .eq("id", id)
+
+        if (error) {
+          // Revert optimistic update on error
+          setLaundry((prev) => prev.map((m) => (m.id === id ? machine : m)))
+          return { success: false, error: "Unable to update timer. Please try again." }
+        }
+
+        return { success: true, error: null }
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "Unable to update timer. Please try again."
+        }
+      }
+    },
+    [laundry],
   )
 
   // Simplified CRUD operations
@@ -576,6 +703,7 @@ export default function useSupabaseData() {
     // Operations
     toggleMachineStatus,
     reserveMachine,
+    adjustMachineTime,
     addNoiseWithDescription,
     deleteNoise,
     addAnnouncement,
@@ -583,6 +711,6 @@ export default function useSupabaseData() {
     addHelpRequest,
     deleteHelpRequest,
     deleteIncident,
-    refreshData: loadAllData,
+    refreshData: () => loadAllData(undefined, true),
   }
 }

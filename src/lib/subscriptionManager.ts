@@ -96,8 +96,11 @@ class SubscriptionManager {
 
     const now = Date.now()
 
-    // Debounce rapid changes (max once per 500ms)
-    if (now - this.lastChangeTime < 500) {
+    // Faster debouncing for better real-time experience
+    // Machines get priority with 100ms debounce, others use 300ms
+    const debounceTime = table === 'machines' ? 100 : 300
+
+    if (now - this.lastChangeTime < debounceTime) {
       return
     }
 
@@ -110,6 +113,7 @@ class SubscriptionManager {
     if (this.isDestroyed) return
 
     // Use setTimeout to prevent stack overflow and allow for immediate UI updates
+    // Further reduced delay for even faster real-time updates
     setTimeout(() => {
       if (this.isDestroyed) return
 
@@ -120,7 +124,7 @@ class SubscriptionManager {
           console.error("❌ Error in subscription callback:", error)
         }
       })
-    }, 50) // Reduced delay for faster updates
+    }, 10) // Reduced from 50ms to 10ms for faster propagation
   }
 
   private startPolling() {

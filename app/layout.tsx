@@ -1,4 +1,12 @@
 import type React from "react"
+import type { Metadata } from "next"
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'Dorm Dashboard',
+  description: 'Dorm 21 Management Dashboard',
+  generator: 'v0.dev'
+}
 
 export default function RootLayout({
   children,
@@ -7,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-bgLight text-gray-800 font-sans">
+      <body className="min-h-screen bg-bgLight text-gray-800 font-sans" suppressHydrationWarning={true}>
         <nav className="bg-white shadow-sm p-4 border-b border-gray-200">
           <div className="container mx-auto">
             <h1 className="text-xl font-bold text-primary">🏠 Dorm Dashboard</h1>
@@ -19,10 +27,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-import './globals.css'
-
-export const metadata = {
-      generator: 'v0.dev'
-    };

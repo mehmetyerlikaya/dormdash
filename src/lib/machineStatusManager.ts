@@ -108,6 +108,8 @@ class MachineStatusManager {
                 status: "free",
                 start_at: null,
                 end_at: null,
+                started_by_user_id: null,
+                started_by_device_fingerprint: null,
                 ...(this.hasGraceEndColumn ? { grace_end_at: null } : {}),
               },
             })

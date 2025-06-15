@@ -37,7 +37,7 @@ export default function HelpMeCard() {
   }
 
   return (
-    <CardWrapper color="bgDark" className="border-l-4 border-purple-500 h-full" count={helpMe.length}>
+    <CardWrapper id="help-requests" color="bgDark" className="border-l-4 border-purple-500 h-full" count={helpMe.length}>
       <div className="flex items-center mb-6">
         <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">🆘 Help Requests</h2>

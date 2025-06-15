@@ -29,7 +29,7 @@ export default function Page() {
       <div className="min-h-screen bg-bgLight flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md border border-gray-200">
           <div className="text-warn text-lg mb-4 font-semibold">Connection Error</div>
-          <div className="text-gray-600 mb-4">Unable to connect to the database. Please try again later.</div>
+          <div className="text-gray-600 mb-4">Unable to load dashboard information. Please try again later.</div>
           <button
             onClick={refreshData}
             className="bg-accent hover:bg-teal-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
@@ -56,7 +56,7 @@ export default function Page() {
             {isLoading && (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-500">Updating...</span>
+                <span className="text-sm text-gray-500">Refreshing...</span>
               </div>
             )}
             <button
@@ -73,6 +73,36 @@ export default function Page() {
               }`}
             >
               🔄 Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Navigation Bar */}
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => document.getElementById('laundry-machines')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              👕 Laundry Machines
+            </button>
+            <button
+              onClick={() => document.getElementById('help-requests')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              🆘 Help Me
+            </button>
+            <button
+              onClick={() => document.getElementById('community-board')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              📢 Announcements
+            </button>
+            <button
+              onClick={() => document.getElementById('noise-reports')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              🔇 Noise Reports
             </button>
           </div>
         </div>

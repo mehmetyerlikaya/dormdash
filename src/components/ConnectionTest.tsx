@@ -40,7 +40,7 @@ export default function ConnectionTest() {
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-blue-800">Connecting to database...</span>
+          <span className="text-blue-800">Getting machine status...</span>
         </div>
       </div>
     )
@@ -49,7 +49,7 @@ export default function ConnectionTest() {
   if (connectionStatus === "error") {
     return (
       <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <div className="text-red-800">Unable to connect to database. Please try again later.</div>
+        <div className="text-red-800">Unable to load machine information. Please try again later.</div>
       </div>
     )
   }

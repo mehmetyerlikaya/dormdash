@@ -6,9 +6,10 @@ interface CardWrapperProps {
   className?: string
   count?: number
   title?: string
+  id?: string
 }
 
-export default function CardWrapper({ children, color = "white", className = "", count, title }: CardWrapperProps) {
+export default function CardWrapper({ children, color = "white", className = "", count, title, id }: CardWrapperProps) {
   const colorClasses = {
     white: "bg-white",
     bgDark: "bg-bgDark",
@@ -20,6 +21,7 @@ export default function CardWrapper({ children, color = "white", className = "",
 
   return (
     <div
+      id={id}
       className={`relative p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 ${bgClass} ${className}`}
     >
       {/* Number badge */}

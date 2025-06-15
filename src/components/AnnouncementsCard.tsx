@@ -63,7 +63,7 @@ export default function AnnouncementsCard() {
   }
 
   return (
-    <CardWrapper color="bgDark" className="border-l-4 border-accent h-full" count={announcements.length}>
+    <CardWrapper id="community-board" color="bgDark" className="border-l-4 border-accent h-full" count={announcements.length}>
       <div className="flex items-center mb-6">
         <div className="w-3 h-3 bg-accent rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">📋 Community Board</h2>

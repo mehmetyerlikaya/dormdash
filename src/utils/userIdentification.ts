@@ -1,7 +1,7 @@
 // Generate a consistent user ID for this device
 export function getDeviceUserId(): string {
   // Return a default value during SSR
-  if (typeof window === "undefined") return "User1"
+  if (typeof window === "undefined") return "anonymous-ssr"
 
   try {
     let userId = localStorage.getItem("dorm-dashboard-user-id")
@@ -11,13 +11,13 @@ export function getDeviceUserId(): string {
       const fingerprint = generateDeviceFingerprint()
       const hash = hashString(fingerprint)
       const userNumber = Math.abs(hash % 9999) + 1
-      userId = `User${userNumber.toString().padStart(4, "0")}`
+      userId = `user-${userNumber.toString().padStart(4, "0")}`
       localStorage.setItem("dorm-dashboard-user-id", userId)
     }
 
     return userId
   } catch (error) {
-    return "User1"
+    return "anonymous-fallback"
   }
 }
 
@@ -57,7 +57,7 @@ function hashString(str: string): number {
 
 // Get a display name for the user
 export function getUserDisplayName(): string {
-  if (typeof window === "undefined") return "User"
+  if (typeof window === "undefined") return "Anonymous"
 
   try {
     const displayName = localStorage.getItem("dorm-dashboard-display-name")
@@ -66,7 +66,7 @@ export function getUserDisplayName(): string {
     }
     return getDeviceUserId()
   } catch (error) {
-    return "User"
+    return "Anonymous"
   }
 }
 

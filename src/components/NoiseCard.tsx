@@ -52,7 +52,7 @@ export default function NoiseCard() {
   }
 
   return (
-    <CardWrapper color="bgDark" className="border-l-4 border-warn h-full" count={noise.length}>
+    <CardWrapper id="noise-reports" color="bgDark" className="border-l-4 border-warn h-full" count={noise.length}>
       <div className="flex items-center mb-6">
         <div className="w-3 h-3 bg-warn rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">🔊 Noise Reports</h2>
