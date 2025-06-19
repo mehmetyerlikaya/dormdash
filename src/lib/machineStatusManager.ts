@@ -21,12 +21,12 @@ class MachineStatusManager {
 
     console.log("🔄 Starting machine status monitoring...")
 
-    // Check every 30 seconds (less aggressive)
+    // Check every 15 seconds
     this.statusCheckInterval = setInterval(() => {
       if (!this.isDestroyed) {
         this.checkMachineStatuses()
       }
-    }, 30000)
+    }, 15000)
 
     // Also check immediately
     this.checkMachineStatuses()

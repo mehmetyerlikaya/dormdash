@@ -7,6 +7,7 @@ import useSupabaseData from "@/src/hooks/useSupabaseData"
 import useCountdown from "@/src/hooks/useCountdown"
 import { canAdjustTime, getOwnershipDisplay, getTimeUntilAdjustmentAvailable, isCurrentUserOwner } from "@/src/utils/machineOwnership"
 import { getDeviceUserId } from "@/src/utils/userIdentification"
+import MachineStatusManager from "@/src/lib/machineStatusManager"
 
 export default function CheckInPage() {
   const searchParams = useSearchParams()
@@ -34,6 +35,15 @@ export default function CheckInPage() {
     const foundMachine = laundry.find((m) => m.id === machineId)
     setMachine(foundMachine || null)
   }, [machineId, laundry])
+
+  // Start machine status monitoring when component mounts
+  useEffect(() => {
+    const mgr = MachineStatusManager.getInstance()
+    mgr.startStatusMonitoring()
+    return () => {
+      mgr.stopStatusMonitoring()
+    }
+  }, [])
 
   // Reduced auto-refresh to every 10 seconds to prevent conflicts
   useEffect(() => {
