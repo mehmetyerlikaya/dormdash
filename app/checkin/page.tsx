@@ -7,14 +7,13 @@ import useSupabaseData from "@/src/hooks/useSupabaseData"
 import useCountdown from "@/src/hooks/useCountdown"
 import { canAdjustTime, getOwnershipDisplay, getTimeUntilAdjustmentAvailable, isCurrentUserOwner } from "@/src/utils/machineOwnership"
 import { getDeviceUserId } from "@/src/utils/userIdentification"
-import MachineStatusManager from "@/src/lib/machineStatusManager"
+import type { Machine } from "@/src/hooks/useSupabaseData"
 
 export default function CheckInPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const machineId = searchParams.get("machine")
-  const { laundry, toggleMachineStatus, reserveMachine, adjustMachineTime, isLoading, refreshData } = useSupabaseData()
-  const [machine, setMachine] = useState<any>(null)
+  const { laundry, toggleMachineStatus, reserveMachine, adjustMachineTime, isLoading, error } = useSupabaseData()
   const [actionResult, setActionResult] = useState<string>("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [customTime, setCustomTime] = useState("60")
@@ -27,32 +26,9 @@ export default function CheckInPage() {
     setIsClient(true)
   }, [])
 
+  // Find the machine we care about
+  const machine = laundry.find((m) => m.id === machineId)
   const countdown = useCountdown(machine?.endAt, machine?.graceEndAt)
-
-  useEffect(() => {
-    if (!machineId) return
-
-    const foundMachine = laundry.find((m) => m.id === machineId)
-    setMachine(foundMachine || null)
-  }, [machineId, laundry])
-
-  // Start machine status monitoring when component mounts
-  useEffect(() => {
-    const mgr = MachineStatusManager.getInstance()
-    mgr.startStatusMonitoring()
-    return () => {
-      mgr.stopStatusMonitoring()
-    }
-  }, [])
-
-  // Reduced auto-refresh to every 10 seconds to prevent conflicts
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refreshData()
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [refreshData])
 
   const handleToggle = async () => {
     if (!machineId || isProcessing) return
@@ -81,9 +57,6 @@ export default function CheckInPage() {
 
     if (success) {
       setActionResult("Status updated successfully!")
-
-      // Single refresh after 2 seconds to confirm the change
-      setTimeout(() => refreshData(), 2000)
     } else {
       setActionResult("Error updating machine status")
     }
@@ -196,8 +169,6 @@ export default function CheckInPage() {
     if (result.success) {
       setAdjustResult("Timer updated successfully")
       setAdjustTime("")
-      // Refresh data after successful adjustment
-      setTimeout(() => refreshData(), 1000)
     } else {
       setAdjustResult(result.error || "Failed to update timer")
     }
@@ -206,7 +177,7 @@ export default function CheckInPage() {
   }
 
   // Custom display names for machines (same logic as LaundryCard)
-  const getDisplayName = (machine: any) => {
+  const getDisplayName = (machine: Machine) => {
     if (!machine) return ""
 
     const isWasher = machine.name.toLowerCase().includes("washer")
@@ -236,7 +207,7 @@ export default function CheckInPage() {
     )
   }
 
-  if (isLoading && !machine) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow text-center">
@@ -247,25 +218,26 @@ export default function CheckInPage() {
     )
   }
 
-  if (!machineId) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow text-center">
-          <div className="text-red-600 text-lg mb-4">Error</div>
-          <div className="text-gray-600">No machine ID provided.</div>
+          <div className="text-lg text-red-600">Error: {error}</div>
         </div>
       </div>
     )
   }
 
-  if (!machine) {
+  if (!machineId || !machine) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow text-center">
-          <div className="text-red-600 text-lg mb-4">Machine Not Found</div>
-          <div className="text-gray-600 mb-4">The requested machine could not be found.</div>
-          <button onClick={refreshData} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-            Retry Loading
+          <div className="text-lg text-red-600">Machine not found</div>
+          <button
+            onClick={handleBackToHome}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Back to Home
           </button>
         </div>
       </div>
@@ -273,23 +245,17 @@ export default function CheckInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow text-center max-w-md w-full mx-4">
-        <h1 className="text-2xl font-bold mb-4">Machine Check-In</h1>
-
-        {/* QR Code for this specific check-in page */}
-        <div className="mb-6">
-          <div className="text-sm text-gray-600 mb-3">Scan to access this page</div>
-          <div className="flex justify-center">
-            <div className="bg-white p-3 rounded-lg border-2 border-gray-200 shadow-sm">
-              <QRCodeSVG
-                value={`${typeof window !== "undefined" ? window.location.origin : ""}/checkin?machine=${machineId}`}
-                size={80}
-                fgColor="#1A1F36"
-                bgColor="#FFFFFF"
-              />
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={handleBackToHome}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            ← Back
+          </button>
+          <h1 className="text-xl font-semibold">Machine Check-in</h1>
+          <div className="w-8"></div> {/* Spacer for alignment */}
         </div>
 
         <div className="mb-6">
@@ -338,29 +304,45 @@ export default function CheckInPage() {
 
         {/* Time limit input - always show when machine is free */}
         {machine.status === "free" && (
-          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="text-sm font-medium text-blue-800 mb-2">Set Time Limit</div>
-            <div className="flex items-center justify-center gap-2">
-              <input
-                type="number"
-                value={customTime}
-                onChange={(e) => setCustomTime(e.target.value)}
-                placeholder="Enter minutes"
-                className="border border-gray-300 rounded-md p-3 w-24 text-center text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <span className="text-sm text-gray-600 font-medium">minutes</span>
-            </div>
-            <div className="text-xs text-blue-600 mt-2 text-center">
-              Add a time limit accordingly
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Time Limit (minutes)
+            </label>
+            <input
+              type="number"
+              value={customTime}
+              onChange={(e) => setCustomTime(e.target.value)}
+              min="15"
+              max="180"
+              className="w-full border rounded p-2 text-center"
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Enter 15-180 minutes
             </div>
           </div>
         )}
 
-        {/* Time adjustment section - show for machines you own and are running */}
+        {/* Action button */}
+        <button
+          onClick={handleToggle}
+          disabled={isButtonDisabled()}
+          className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-colors ${getButtonColor()}`}
+        >
+          {getButtonText()}
+        </button>
+
+        {/* Action result message */}
+        {actionResult && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-sm text-blue-800">{actionResult}</div>
+          </div>
+        )}
+
+        {/* Time adjustment section - only for running machines owned by current user */}
         {machine.status === "running" && isCurrentUserOwner(machine) && (
           <>
             {canAdjustTime(machine) ? (
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="text-sm font-medium text-blue-800 mb-2">Adjust Timer</div>
                 <div className="text-xs text-blue-600 mb-3">
                   Current: {machine.endAt ? Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60))) : 0} minutes remaining
@@ -390,19 +372,15 @@ export default function CheckInPage() {
                 </div>
 
                 {adjustResult && (
-                  <div className={`text-xs p-2 rounded ${
-                    adjustResult.includes("successfully")
-                      ? "bg-green-100 text-green-800 border border-green-200"
-                      : "bg-red-100 text-red-800 border border-red-200"
-                  }`}>
+                  <div className={`text-xs ${adjustResult.includes("success") ? "text-green-600" : "text-red-600"}`}>
                     {adjustResult}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="text-sm font-medium text-gray-600 mb-2">Timer Adjustment</div>
-                <div className="text-xs text-gray-500">
+              <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm font-medium text-gray-800 mb-1">⏱️ Time Adjustment</div>
+                <div className="text-xs text-gray-600">
                   Available in {getTimeUntilAdjustmentAvailable(machine)} minutes
                 </div>
               </div>
@@ -410,41 +388,16 @@ export default function CheckInPage() {
           </>
         )}
 
-        <button
-          onClick={handleToggle}
-          disabled={isButtonDisabled()}
-          className={`w-full p-3 rounded text-white font-medium mb-4 ${getButtonColor()}`}
-        >
-          {getButtonText()}
-        </button>
-
-        {/* Back to Home Button */}
-        <button
-          onClick={handleBackToHome}
-          className="w-full p-3 rounded-lg bg-gray-800 hover:bg-gray-900 text-white font-medium mb-4 transition-colors duration-200 shadow-md"
-        >
-          ← Back to Home
-        </button>
-
-        {actionResult && (
-          <div
-            className={`text-sm mb-4 p-2 rounded ${
-              actionResult.includes("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-            }`}
-          >
-            {actionResult}
+        {/* QR Code for sharing */}
+        <div className="mt-8 flex flex-col items-center">
+          <div className="text-sm text-gray-600 mb-2">Share this machine</div>
+          <div className="bg-white p-2 rounded-lg shadow">
+            <QRCodeSVG
+              value={`${typeof window !== "undefined" ? window.location.href : ""}`}
+              size={128}
+            />
           </div>
-        )}
-
-        {machine.status === "finishedGrace" && (
-          <div className="bg-orange-50 border border-orange-200 rounded p-3 text-sm text-orange-800">
-            <div className="font-medium mb-1">⚠️ Grace Period Active</div>
-            <div>
-              Please collect your items within the time limit. The machine will become available automatically when the
-              grace period ends.
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
