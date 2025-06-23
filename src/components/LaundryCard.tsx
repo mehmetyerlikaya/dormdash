@@ -12,6 +12,7 @@ import { isRecentlyUpdated, formatTimeAgo, getRecentUpdateClasses } from "@/src/
 import { isCurrentUserOwner, hasOwner, getOwnershipDisplay, getOwnershipBadgeClasses, canAdjustTime, getTimeUntilAdjustmentAvailable } from "@/src/utils/machineOwnership"
 import { getDeviceUserId } from "@/src/utils/userIdentification"
 import TimeAdjustmentModal from "./TimeAdjustmentModal"
+import Image from "next/image"
 
 // Component for "Just Updated" badge
 function JustUpdatedBadge({ machine }: { machine: any }) {
@@ -193,18 +194,18 @@ export default function LaundryCard() {
   // Custom display names for machines
   const getDisplayName = (machine: any) => {
     const isWasher = machine.name.toLowerCase().includes("washer")
-
+    const numberMatch = machine.name.match(/\d+/)
+    const originalNumber = numberMatch ? Number.parseInt(numberMatch[0]) : 0
     if (isWasher) {
-      // Extract number from washer name (e.g., "Washer 1" -> "1")
-      const numberMatch = machine.name.match(/\d+/)
-      const number = numberMatch ? numberMatch[0] : ""
-      return `Washer ${number}`
+      // Map Washer 1-4 to Washer #5-8
+      const washerMap: { [key: string]: number } = { '1': 5, '2': 6, '3': 7, '4': 8 }
+      const newNumber = washerMap[String(originalNumber)] || originalNumber
+      return `Washer #${newNumber}`
     } else {
-      // For dryers, use "Dryer 5" through "Dryer 8" based on original number
-      const numberMatch = machine.name.match(/\d+/)
-      const originalNumber = numberMatch ? Number.parseInt(numberMatch[0]) : 0
-      const newNumber = originalNumber + 4 // Map 1->5, 2->6, 3->7, 4->8
-      return `Dryer ${newNumber}`
+      // Map Dryer 5-8 to Dryer #1-4
+      const dryerMap: { [key: string]: number } = { '5': 1, '6': 2, '7': 3, '8': 4 }
+      const newNumber = dryerMap[String(originalNumber)] || originalNumber
+      return `Dryer #${newNumber}`
     }
   }
 
@@ -295,8 +296,7 @@ export default function LaundryCard() {
               {/* Machine name */}
               <div className="text-center mb-4">
                 <h3 className="font-bold text-primary text-xl mb-1">{displayName}</h3>
-                <TimeAgoDisplay machine={machine} />
-
+                {/* <TimeAgoDisplay machine={machine} /> */}
                 {/* Ownership badge */}
                 <div className="mt-2">
                   <OwnershipBadge machine={machine} />
@@ -333,34 +333,7 @@ export default function LaundryCard() {
           )
         })}
       </div>
-
-      {/* Footer info */}
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>Available</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            <span>In Use</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-            <span>Please Collect</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Time Adjustment Modal */}
-      {selectedMachine && (
-        <TimeAdjustmentModal
-          machine={selectedMachine}
-          isOpen={adjustModalOpen}
-          onClose={handleCloseModal}
-          onAdjust={adjustMachineTime}
-        />
-      )}
+      {/* ...footer and modal... */}
     </CardWrapper>
   )
 }

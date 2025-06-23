@@ -52,9 +52,9 @@ export default function NoiseCard() {
   }
 
   return (
-    <CardWrapper id="noise-reports" color="bgDark" className="border-l-4 border-accent h-[600px]" count={noise.length}>
+    <CardWrapper id="noise-reports" color="bgDark" className="border-l-4 border-[#f59e0b] h-[600px]" count={noise.length}>
       <div className="flex items-center mb-6">
-        <div className="w-3 h-3 bg-accent rounded-full mr-3"></div>
+        <div className="w-3 h-3 bg-[#f59e0b] rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">🔊 Noise Reports</h2>
       </div>
 
@@ -65,7 +65,7 @@ export default function NoiseCard() {
           className={`w-full p-3 rounded-lg mb-4 font-medium transition-all duration-200 ${
             !isClient
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-accent hover:bg-teal-600 text-white shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+              : "bg-[#f59e0b] hover:bg-teal-600 text-white shadow-md hover:shadow-lg transform hover:scale-[1.02]"
           }`}
         >
           {!isClient ? "Loading..." : "➕ Report Noise"}
@@ -77,7 +77,7 @@ export default function NoiseCard() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Please describe the noise issue (required)..."
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-accent focus:border-accent h-20 resize-none"
+            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-[#f59e0b] focus:border-[#f59e0b] h-20 resize-none"
             disabled={isSubmitting}
             maxLength={500}
           />
@@ -89,7 +89,7 @@ export default function NoiseCard() {
               className={`flex-1 p-2 rounded-lg font-medium transition-colors ${
                 isSubmitting || !description.trim() || !isClient
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-accent hover:bg-teal-600 text-white"
+                  : "bg-[#f59e0b] hover:bg-teal-600 text-white"
               }`}
             >
               {isSubmitting ? "Reporting..." : "Submit Report"}
@@ -119,7 +119,7 @@ export default function NoiseCard() {
                   <div className="flex items-center gap-2 mb-1">
                     <div className="text-sm font-medium text-primary">{entry.user}</div>
                     {canDelete && (
-                      <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-full">Your post</span>
+                      <span className="text-xs bg-[#f59e0b]/10 text-[#f59e0b] px-2 py-1 rounded-full">Your post</span>
                     )}
                   </div>
                   <div className="text-sm text-gray-700 mt-1">{entry.description}</div>
@@ -128,7 +128,7 @@ export default function NoiseCard() {
                 {canDelete && (
                   <button
                     onClick={() => handleDelete(entry.id)}
-                    className="text-accent text-xs hover:text-teal-700 ml-2 px-2 py-1 hover:bg-teal-50 rounded transition-colors"
+                    className="text-[#f59e0b] text-xs hover:text-teal-700 ml-2 px-2 py-1 hover:bg-teal-50 rounded transition-colors"
                     title="Delete your post"
                   >
                     Delete

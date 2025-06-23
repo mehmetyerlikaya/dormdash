@@ -63,9 +63,9 @@ export default function AnnouncementsCard() {
   }
 
   return (
-    <CardWrapper id="community-board" color="bgDark" className="border-l-4 border-accent h-[600px]" count={announcements.length}>
+    <CardWrapper id="community-board" color="bgDark" className="border-l-4 border-[#10b981] h-[600px]" count={announcements.length}>
       <div className="flex items-center mb-6">
-        <div className="w-3 h-3 bg-accent rounded-full mr-3"></div>
+        <div className="w-3 h-3 bg-[#10b981] rounded-full mr-3"></div>
         <h2 className="text-xl font-bold text-primary">📋 Community Board</h2>
       </div>
 
@@ -76,7 +76,7 @@ export default function AnnouncementsCard() {
           className={`w-full p-3 rounded-lg mb-4 font-medium transition-all duration-200 ${
             !isClient
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-accent hover:bg-teal-600 text-white shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+              : "bg-[#10b981] hover:bg-teal-600 text-white shadow-md hover:shadow-lg transform hover:scale-[1.02]"
           }`}
         >
           {!isClient ? "Loading..." : "➕ Post Announcement"}
@@ -89,7 +89,7 @@ export default function AnnouncementsCard() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-accent focus:border-accent"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981]"
                 disabled={isSubmitting}
               >
                 {ANNOUNCEMENT_TYPES.map((typeOption) => (
@@ -107,7 +107,7 @@ export default function AnnouncementsCard() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter a title..."
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-accent focus:border-accent"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981]"
                 disabled={isSubmitting}
                 maxLength={100}
               />
@@ -120,7 +120,7 @@ export default function AnnouncementsCard() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Provide details..."
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-accent focus:border-accent h-20 resize-none"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] h-20 resize-none"
                 disabled={isSubmitting}
                 maxLength={500}
               />
@@ -135,7 +135,7 @@ export default function AnnouncementsCard() {
               className={`flex-1 p-2 rounded-lg font-medium transition-colors ${
                 isSubmitting || !title.trim() || !description.trim() || !isClient
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-accent hover:bg-teal-600 text-white"
+                  : "bg-[#10b981] hover:bg-teal-600 text-white"
               }`}
             >
               {isSubmitting ? "Posting..." : "Post"}
@@ -165,7 +165,7 @@ export default function AnnouncementsCard() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs px-2 py-1 rounded-full ${typeInfo.color}`}>{typeInfo.label}</span>
                   {canDelete && (
-                    <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-full">Your post</span>
+                    <span className="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded-full">Your post</span>
                   )}
                 </div>
                 {canDelete && (

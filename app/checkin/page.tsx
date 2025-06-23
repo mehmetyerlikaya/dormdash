@@ -179,20 +179,19 @@ export default function CheckInPage() {
   // Custom display names for machines (same logic as LaundryCard)
   const getDisplayName = (machine: Machine) => {
     if (!machine) return ""
-
     const isWasher = machine.name.toLowerCase().includes("washer")
-
+    const numberMatch = machine.name.match(/\d+/)
+    const originalNumber = numberMatch ? Number.parseInt(numberMatch[0]) : 0
     if (isWasher) {
-      // Extract number from washer name (e.g., "Washer 1" -> "1")
-      const numberMatch = machine.name.match(/\d+/)
-      const number = numberMatch ? numberMatch[0] : ""
-      return `Washer ${number}`
+      // Map Washer 1-4 to Washer #5-8
+      const washerMap = { 1: 5, 2: 6, 3: 7, 4: 8 }
+      const newNumber = washerMap[originalNumber] || originalNumber
+      return `Washer #${newNumber}`
     } else {
-      // For dryers, use "Dryer 5" through "Dryer 8" based on original number
-      const numberMatch = machine.name.match(/\d+/)
-      const originalNumber = numberMatch ? Number.parseInt(numberMatch[0]) : 0
-      const newNumber = originalNumber + 4 // Map 1->5, 2->6, 3->7, 4->8
-      return `Dryer ${newNumber}`
+      // Map Dryer 5-8 to Dryer #1-4
+      const dryerMap = { 5: 1, 6: 2, 7: 3, 8: 4 }
+      const newNumber = dryerMap[originalNumber] || originalNumber
+      return `Dryer #${newNumber}`
     }
   }
 
