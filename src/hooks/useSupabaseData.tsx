@@ -563,20 +563,41 @@ export default function useSupabaseData() {
         // Apply optimistic update
         setLaundry((prev) => prev.map((m) => (m.id === id ? optimisticUpdate : m)))
 
-        // Send update to database
-        const { error } = await supabase
-          .from("machines")
-          .update({ end_at: newEndAt.toISOString() })
-          .eq("id", id)
+        // Send update to database with retry logic for mobile network reliability
+        let retryCount = 0
+        const maxRetries = 2
+        let lastError = null
+        
+        while (retryCount < maxRetries) {
+          try {
+            const { error } = await supabase
+              .from("machines")
+              .update({ end_at: newEndAt.toISOString() })
+              .eq("id", id)
 
-        if (error) {
-          // Revert optimistic update on error
-          setLaundry((prev) => prev.map((m) => (m.id === id ? machine : m)))
-          return { success: false, error: "Unable to update timer. Please try again." }
+            if (error) {
+              throw error
+            }
+            
+            // Success - break out of retry loop
+            break
+          } catch (err) {
+            lastError = err
+            retryCount++
+            
+            if (retryCount >= maxRetries) {
+              // Revert optimistic update on final failure
+              setLaundry((prev) => prev.map((m) => (m.id === id ? machine : m)))
+              return { success: false, error: "Unable to update timer. Please try again." }
+            }
+            
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+          }
         }
 
-        // Always refresh data after update
-        await loadAllData("machines", true)
+        // Don't refresh data - let optimistic update and real-time subscription handle it
+        // This prevents the race condition that causes "00:00:00" display on mobile
 
         return { success: true, error: null }
       } catch (err) {

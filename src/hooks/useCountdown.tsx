@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 interface CountdownResult {
   secondsLeft: number
@@ -12,25 +12,45 @@ export default function useCountdown(endAt?: Date, graceEndAt?: Date): Countdown
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [inGrace, setInGrace] = useState(false)
   const [graceSecondsLeft, setGraceSecondsLeft] = useState(0)
+  
+  // Use refs to track the latest values and prevent stale closures on mobile
+  const endAtRef = useRef(endAt)
+  const graceEndAtRef = useRef(graceEndAt)
+  const lastUpdateRef = useRef(0)
+
+  // Update refs when props change
+  useEffect(() => {
+    endAtRef.current = endAt
+    graceEndAtRef.current = graceEndAt
+  }, [endAt, graceEndAt])
 
   useEffect(() => {
     const updateCountdown = () => {
-      const now = new Date()
+      const now = Date.now()
+      
+      // Prevent excessive updates on mobile (throttling protection)
+      if (now - lastUpdateRef.current < 900) {
+        return
+      }
+      lastUpdateRef.current = now
 
-      if (endAt) {
-        const timeLeft = Math.max(0, Math.floor((endAt.getTime() - now.getTime()) / 1000))
+      const currentEndAt = endAtRef.current
+      const currentGraceEndAt = graceEndAtRef.current
+
+      if (currentEndAt) {
+        const timeLeft = Math.max(0, Math.floor((currentEndAt.getTime() - now) / 1000))
         setSecondsLeft(timeLeft)
 
         // Check if we're in grace period
-        if (graceEndAt) {
-          const graceLeft = Math.max(0, Math.floor((graceEndAt.getTime() - now.getTime()) / 1000))
+        if (currentGraceEndAt) {
+          const graceLeft = Math.max(0, Math.floor((currentGraceEndAt.getTime() - now) / 1000))
           setGraceSecondsLeft(graceLeft)
           setInGrace(timeLeft === 0 && graceLeft > 0)
         } else if (timeLeft === 0) {
           // If no graceEndAt but we're at 0 time left and status is finishedGrace,
           // use a default 5 minute grace period
-          const defaultGraceEnd = new Date(endAt.getTime() + 5 * 60 * 1000)
-          const graceLeft = Math.max(0, Math.floor((defaultGraceEnd.getTime() - now.getTime()) / 1000))
+          const defaultGraceEnd = new Date(currentEndAt.getTime() + 5 * 60 * 1000)
+          const graceLeft = Math.max(0, Math.floor((defaultGraceEnd.getTime() - now) / 1000))
           setGraceSecondsLeft(graceLeft)
           setInGrace(graceLeft > 0)
         } else {

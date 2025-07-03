@@ -132,12 +132,18 @@ class SubscriptionManager {
       return
     }
 
-    // Polling every 60 seconds as fallback
+    // More frequent polling on mobile to compensate for throttling
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+    
+    const pollInterval = isMobile ? 30000 : 60000 // 30s on mobile, 60s on desktop
+
     this.pollingInterval = setInterval(() => {
       if (this.isDestroyed) return
       console.log("🔄 Polling for changes...")
       this.notifyCallbacks("polling", "fallback")
-    }, 60000)
+    }, pollInterval)
   }
 
   private handleSubscriptionError() {
