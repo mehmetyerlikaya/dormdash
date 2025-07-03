@@ -550,13 +550,9 @@ export default function useSupabaseData() {
           return { success: false, error: "Please enter a number between 1-120 minutes" }
         }
 
-        // Calculate new end time based on the new total duration from start time
+        // Always set new end time as X minutes from now (Option 1)
         const now = new Date()
-        let newEndAt = new Date(machine.startAt.getTime() + newMinutes * 60 * 1000)
-        if (newEndAt < now) {
-          // If the new end time would be in the past, set it to now + newMinutes
-          newEndAt = new Date(now.getTime() + newMinutes * 60 * 1000)
-        }
+        let newEndAt = new Date(now.getTime() + newMinutes * 60 * 1000)
 
         const optimisticUpdate = {
           ...machine,
