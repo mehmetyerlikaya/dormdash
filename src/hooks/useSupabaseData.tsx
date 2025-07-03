@@ -552,8 +552,11 @@ export default function useSupabaseData() {
 
         // Calculate new end time based on the new total duration from start time
         const now = new Date()
-        const startTime = machine.startAt || now
-        const newEndAt = new Date(startTime.getTime() + newMinutes * 60 * 1000)
+        let newEndAt = new Date(machine.startAt.getTime() + newMinutes * 60 * 1000)
+        if (newEndAt < now) {
+          // If the new end time would be in the past, set it to now + newMinutes
+          newEndAt = new Date(now.getTime() + newMinutes * 60 * 1000)
+        }
 
         const optimisticUpdate = {
           ...machine,
