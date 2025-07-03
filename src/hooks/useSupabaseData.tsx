@@ -540,11 +540,9 @@ export default function useSupabaseData() {
           return { success: false, error: "Machine not found" }
         }
 
-        const currentUserId = getDeviceUserId()
-
-        // Check ownership - only the user who started the machine can adjust it
-        if (machine.startedByUserId !== currentUserId) {
-          return { success: false, error: "You can only adjust machines you started" }
+        // Only allow adjusting time for running machines
+        if (machine.status !== "running") {
+          return { success: false, error: "Can only adjust time for running machines" }
         }
 
         // Validate time range (1-120 minutes for adjustment)
@@ -577,6 +575,9 @@ export default function useSupabaseData() {
           setLaundry((prev) => prev.map((m) => (m.id === id ? machine : m)))
           return { success: false, error: "Unable to update timer. Please try again." }
         }
+
+        // Always refresh data after update
+        await loadAllData("machines", true)
 
         return { success: true, error: null }
       } catch (err) {

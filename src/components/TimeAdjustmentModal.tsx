@@ -17,6 +17,11 @@ export default function TimeAdjustmentModal({ machine, isOpen, onClose, onAdjust
 
   if (!isOpen) return null
 
+  // Calculate current remaining time
+  const currentMinutesLeft = machine.endAt 
+    ? Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))
+    : 0
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -53,16 +58,11 @@ export default function TimeAdjustmentModal({ machine, isOpen, onClose, onAdjust
     }
   }
 
-  // Calculate current remaining time
-  const currentMinutesLeft = machine.endAt 
-    ? Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))
-    : 0
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Adjust Timer</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Set Remaining Time</h3>
           <button
             onClick={handleClose}
             disabled={isProcessing}
@@ -76,15 +76,18 @@ export default function TimeAdjustmentModal({ machine, isOpen, onClose, onAdjust
           <p className="text-sm text-gray-600 mb-2">
             <strong>{machine.name}</strong>
           </p>
+          <p className="text-sm text-blue-700 font-semibold mb-2">
+            Current: <span className="font-bold">{currentMinutesLeft} minutes left</span>
+          </p>
           <p className="text-sm text-gray-500">
-            Current: {currentMinutesLeft} minutes remaining
+            Set the total time left for this machine.
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="minutes" className="block text-sm font-medium text-gray-700 mb-2">
-              Minutes remaining:
+              New time left (minutes):
             </label>
             <input
               type="number"
@@ -99,7 +102,7 @@ export default function TimeAdjustmentModal({ machine, isOpen, onClose, onAdjust
               autoFocus
             />
             <p className="text-xs text-gray-500 mt-1">
-              Enter a number between 1 and 120 minutes
+              Enter a number between 1 and 120 minutes.
             </p>
           </div>
 

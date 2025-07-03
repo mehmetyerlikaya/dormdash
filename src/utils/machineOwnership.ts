@@ -54,7 +54,7 @@ export function getOwnershipBadgeClasses(machine: Machine): string {
  * Only available after 10 minutes of machine running
  */
 export function canAdjustTime(machine: Machine): boolean {
-  if (machine.status !== "running" || !isCurrentUserOwner(machine)) {
+  if (machine.status !== "running") {
     return false
   }
 

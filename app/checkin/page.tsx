@@ -185,12 +185,12 @@ export default function CheckInPage() {
     if (isWasher) {
       // Map Washer 1-4 to Washer #5-8
       const washerMap = { 1: 5, 2: 6, 3: 7, 4: 8 }
-      const newNumber = washerMap[originalNumber] || originalNumber
+      const newNumber = washerMap[String(originalNumber)] || originalNumber
       return `Washer #${newNumber}`
     } else {
       // Map Dryer 5-8 to Dryer #1-4
       const dryerMap = { 5: 1, 6: 2, 7: 3, 8: 4 }
-      const newNumber = dryerMap[originalNumber] || originalNumber
+      const newNumber = dryerMap[String(originalNumber)] || originalNumber
       return `Dryer #${newNumber}`
     }
   }

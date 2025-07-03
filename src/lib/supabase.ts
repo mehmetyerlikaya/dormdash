@@ -39,6 +39,8 @@ export interface Database {
           end_at: string | null
           grace_end_at: string | null
           updated_at: string
+          started_by_user_id: string | null
+          started_by_device_fingerprint: string | null
         }
         Insert: {
           id: string
@@ -47,6 +49,8 @@ export interface Database {
           start_at?: string | null
           end_at?: string | null
           grace_end_at?: string | null
+          started_by_user_id?: string | null
+          started_by_device_fingerprint?: string | null
         }
         Update: {
           id?: string
@@ -55,6 +59,8 @@ export interface Database {
           start_at?: string | null
           end_at?: string | null
           grace_end_at?: string | null
+          started_by_user_id?: string | null
+          started_by_device_fingerprint?: string | null
         }
       }
       noise_reports: {

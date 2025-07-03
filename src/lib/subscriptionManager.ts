@@ -158,15 +158,29 @@ class SubscriptionManager {
 
     this.isSubscribed = false
 
-    if (this.channel) {
+    // FIXED: Check if channel exists and is valid before trying to unsubscribe
+    if (this.channel && typeof this.channel.unsubscribe === 'function') {
       try {
-        this.channel.unsubscribe()
+        // Temporarily remove channel reference to prevent recursive calls
+        const originalChannel = this.channel
+        this.channel = null // Prevent recursive calls
+        
+        originalChannel.unsubscribe()
+      } catch (error) {
+        console.warn("⚠️ Error during channel unsubscribe:", error)
+      }
+    }
+
+    // FIXED: Check if channel exists before trying to remove it
+    if (this.channel && typeof supabase.removeChannel === 'function') {
+      try {
         supabase.removeChannel(this.channel)
       } catch (error) {
-        console.warn("⚠️ Error during channel cleanup:", error)
+        console.warn("⚠️ Error during channel removal:", error)
       }
-      this.channel = null
     }
+
+    this.channel = null
 
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval)
@@ -187,4 +201,4 @@ class SubscriptionManager {
   }
 }
 
-export default SubscriptionManager
+export default SubscriptionManager 

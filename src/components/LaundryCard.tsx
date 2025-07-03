@@ -82,33 +82,30 @@ function OwnershipBadge({ machine }: { machine: any }) {
 // Component for time adjustment button
 function TimeAdjustButton({ machine, onAdjust }: { machine: any; onAdjust: () => void }) {
   const canAdjust = canAdjustTime(machine)
-  const timeUntilAvailable = getTimeUntilAdjustmentAvailable(machine)
 
-  // Only show for machines the current user owns and are running
-  if (machine.status !== "running" || !isCurrentUserOwner(machine)) {
+  // Only show for running machines
+  if (machine.status !== "running") {
     return null
   }
 
   if (canAdjust) {
     return (
-      <button
-        onClick={onAdjust}
-        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-      >
-        ⏱️ Adjust
-      </button>
-    )
-  }
-
-  // Show countdown until adjustment is available
-  if (timeUntilAvailable > 0) {
-    return (
-      <div className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500">
-        ⏱️ Adjust in {timeUntilAvailable}m
+      <div className="flex flex-col items-center">
+        <button
+          onClick={onAdjust}
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+          title="Change how much time is left on this machine"
+        >
+          ⏱️ Change Time
+        </button>
+        <span className="text-[11px] text-gray-500 mt-1">
+          Timer not correct? Change it.
+        </span>
       </div>
     )
   }
 
+  // Do not show anything before the change time limit hits
   return null
 }
 
@@ -180,6 +177,18 @@ export default function LaundryCard() {
   // Count total incidents for the badge
   const totalIncidents = incidents.length
 
+  // Washer/Dryer metrics
+  const washers = laundry.filter(m => m.name.toLowerCase().includes('washer'));
+  const dryers = laundry.filter(m => m.name.toLowerCase().includes('dryer'));
+
+  const availableWashers = washers.filter(m => m.status === 'free').length;
+  const totalWashers = washers.length;
+  const inUseWashers = washers.filter(m => m.status === 'running').length;
+
+  const availableDryers = dryers.filter(m => m.status === 'free').length;
+  const totalDryers = dryers.length;
+  const inUseDryers = dryers.filter(m => m.status === 'running').length;
+
   // Handle time adjustment
   const handleAdjustTime = (machine: any) => {
     setSelectedMachine(machine)
@@ -221,29 +230,41 @@ export default function LaundryCard() {
         </div>
         {/* Status tags: stacked on mobile, inline on desktop */}
         <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-end sm:items-center sm:gap-3">
-          {/* Main availability counter */}
+          {/* Washers available */}
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 px-4 py-2 rounded-xl shadow-sm w-full sm:w-auto">
             <div className="flex items-center gap-2 justify-center">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-lg font-bold text-green-800">
-                {laundry.filter((m) => m.status === "free").length}
-              </span>
+              <span className="text-lg font-bold text-green-800">{availableWashers}</span>
               <span className="text-sm text-gray-600">of</span>
-              <span className="text-lg font-semibold text-gray-800">
-                {laundry.length}
-              </span>
-              <span className="text-sm font-medium text-green-700">available</span>
+              <span className="text-lg font-semibold text-gray-800">{totalWashers}</span>
+              <span className="text-sm font-medium text-green-700">washers available</span>
             </div>
           </div>
-          {/* Quick status breakdown */}
-          {laundry.filter((m) => m.status === "running").length > 0 && (
+          {/* Dryers available */}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 px-4 py-2 rounded-xl shadow-sm w-full sm:w-auto">
+            <div className="flex items-center gap-2 justify-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-lg font-bold text-green-800">{availableDryers}</span>
+              <span className="text-sm text-gray-600">of</span>
+              <span className="text-lg font-semibold text-gray-800">{totalDryers}</span>
+              <span className="text-sm font-medium text-green-700">dryers available</span>
+            </div>
+          </div>
+          {/* Washers in use */}
+          {inUseWashers > 0 && (
             <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-full sm:w-auto justify-center">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="font-medium text-blue-700">
-                {laundry.filter((m) => m.status === "running").length} in use
-              </span>
+              <span className="font-medium text-blue-700">{inUseWashers} washers in use</span>
             </div>
           )}
+          {/* Dryers in use */}
+          {inUseDryers > 0 && (
+            <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 w-full sm:w-auto justify-center">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="font-medium text-blue-700">{inUseDryers} dryers in use</span>
+            </div>
+          )}
+          {/* Machines ready (grace period) */}
           {laundry.filter((m) => m.status === "finishedGrace").length > 0 && (
             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200 w-full sm:w-auto justify-center">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
@@ -333,7 +354,16 @@ export default function LaundryCard() {
           )
         })}
       </div>
-      {/* ...footer and modal... */}
+      
+      {/* Time Adjustment Modal */}
+      {selectedMachine && (
+        <TimeAdjustmentModal
+          machine={selectedMachine}
+          isOpen={adjustModalOpen}
+          onClose={handleCloseModal}
+          onAdjust={adjustMachineTime}
+        />
+      )}
     </CardWrapper>
   )
 }
