@@ -59,6 +59,29 @@ export interface Incident {
   type: string
 }
 
+export interface AnonymousPost {
+  id: string
+  userId: string
+  content: string
+  parentPostId?: string
+  isDeleted: boolean
+  deletedAt?: Date
+  createdAt: Date
+  updatedAt: Date
+  replyCount: number
+  reactions: PostReaction[]
+  isOwnPost: boolean
+}
+
+export interface PostReaction {
+  id: string
+  postId: string
+  userId: string
+  reactionEmoji: string
+  createdAt: Date
+  isOwnReaction: boolean
+}
+
 // Helper functions to convert between DB and app formats
 const dbToMachine = (row: Database["public"]["Tables"]["machines"]["Row"]): Machine => {
   const graceEndAt = row.grace_end_at
@@ -118,12 +141,36 @@ const dbToIncident = (row: Database["public"]["Tables"]["incidents"]["Row"]): In
   type: row.incident_type,
 })
 
+const dbToAnonymousPost = (row: Database["public"]["Tables"]["anonymous_posts"]["Row"], currentUserId: string): AnonymousPost => ({
+  id: row.id,
+  userId: row.user_id,
+  content: row.content,
+  parentPostId: row.parent_post_id || undefined,
+  isDeleted: row.is_deleted,
+  deletedAt: row.deleted_at ? new Date(row.deleted_at) : undefined,
+  createdAt: new Date(row.created_at),
+  updatedAt: new Date(row.updated_at),
+  replyCount: 0, // Will be calculated separately
+  reactions: [], // Will be populated separately
+  isOwnPost: row.user_id === currentUserId,
+})
+
+const dbToPostReaction = (row: Database["public"]["Tables"]["post_reactions"]["Row"], currentUserId: string): PostReaction => ({
+  id: row.id,
+  postId: row.post_id,
+  userId: row.user_id,
+  reactionEmoji: row.reaction_emoji,
+  createdAt: new Date(row.created_at),
+  isOwnReaction: row.user_id === currentUserId,
+})
+
 export default function useSupabaseData() {
   const [laundry, setLaundry] = useState<Machine[]>([])
   const [noise, setNoise] = useState<NoiseEntry[]>([])
   const [announcements, setAnnouncements] = useState<AnnouncementEntry[]>([])
   const [helpMe, setHelpMe] = useState<HelpMeEntry[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
+  const [anonymousPosts, setAnonymousPosts] = useState<AnonymousPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasGraceEndColumn, setHasGraceEndColumn] = useState(true)
@@ -228,6 +275,50 @@ export default function useSupabaseData() {
         if (incidentsResult.error) throw incidentsResult.error
         setIncidents(incidentsResult.data?.map(dbToIncident) || [])
         break
+
+      case "anonymous_posts":
+        const currentUserId = getDeviceUserId()
+        const postsResult = await supabase
+          .from("anonymous_posts")
+          .select("*")
+          .is("parent_post_id", null) // Only main posts, not replies
+          .order("created_at", { ascending: false })
+          .limit(20)
+        if (postsResult.error) throw postsResult.error
+        
+        // Get reactions for all posts
+        const postIds = postsResult.data?.map(post => post.id) || []
+        let reactionsResult: any = { data: [] }
+        if (postIds.length > 0) {
+          reactionsResult = await supabase
+            .from("post_reactions")
+            .select("*")
+            .in("post_id", postIds)
+        }
+        
+        // Get reply counts for all posts
+        let replyCountsResult: any = { data: [] }
+        if (postIds.length > 0) {
+          replyCountsResult = await supabase
+            .from("anonymous_posts")
+            .select("parent_post_id")
+            .in("parent_post_id", postIds)
+        }
+        
+        // Process posts with reactions and reply counts
+        const posts = postsResult.data?.map((post: any) => {
+          const postReactions = reactionsResult.data?.filter((r: any) => r.post_id === post.id) || []
+          const replyCount = replyCountsResult.data?.filter((r: any) => r.parent_post_id === post.id).length || 0
+          
+          return {
+            ...dbToAnonymousPost(post, currentUserId),
+            reactions: postReactions.map((r: any) => dbToPostReaction(r, currentUserId)),
+            replyCount
+          }
+        }) || []
+        
+        setAnonymousPosts(posts)
+        break
     }
   }
 
@@ -246,9 +337,10 @@ export default function useSupabaseData() {
         .order("timestamp", { ascending: false })
         .limit(50),
       supabase.from("incidents").select("*").order("timestamp", { ascending: false }).limit(50),
+      supabase.from("anonymous_posts").select("*").is("parent_post_id", null).order("created_at", { ascending: false }).limit(20),
     ])
 
-    const [machinesResult, noiseResult, announcementsResult, helpResult, incidentsResult] = (await Promise.race([
+    const [machinesResult, noiseResult, announcementsResult, helpResult, incidentsResult, postsResult] = (await Promise.race([
       dataPromise,
       timeoutPromise,
     ])) as any[]
@@ -260,12 +352,36 @@ export default function useSupabaseData() {
     if (announcementsResult.error) throw new Error(`Failed to load announcements: ${announcementsResult.error.message}`)
     if (helpResult.error) throw new Error(`Failed to load help requests: ${helpResult.error.message}`)
     if (incidentsResult.error) throw new Error(`Failed to load incidents: ${incidentsResult.error.message}`)
+    if (postsResult.error) throw new Error(`Failed to load anonymous posts: ${postsResult.error.message}`)
 
     setLaundry(machinesResult.data?.map(dbToMachine) || [])
     setNoise(noiseResult.data?.map(dbToNoise) || [])
     setAnnouncements(announcementsResult.data?.map(dbToAnnouncement) || [])
     setHelpMe(helpResult.data?.map(dbToHelpMe) || [])
     setIncidents(incidentsResult.data?.map(dbToIncident) || [])
+    
+    // Process anonymous posts with reactions and reply counts
+    const currentUserId = getDeviceUserId()
+    const postIds = postsResult.data?.map(post => post.id) || []
+    
+    // Get reactions and reply counts in parallel
+    const [reactionsResult, replyCountsResult] = await Promise.all([
+      postIds.length > 0 ? supabase.from("post_reactions").select("*").in("post_id", postIds) : Promise.resolve({ data: [] }),
+      postIds.length > 0 ? supabase.from("anonymous_posts").select("parent_post_id").in("parent_post_id", postIds) : Promise.resolve({ data: [] })
+    ])
+    
+    const posts = postsResult.data?.map(post => {
+      const postReactions = reactionsResult.data?.filter((r: any) => r.post_id === post.id) || []
+      const replyCount = replyCountsResult.data?.filter((r: any) => r.parent_post_id === post.id).length || 0
+      
+      return {
+        ...dbToAnonymousPost(post, currentUserId),
+        reactions: postReactions.map((r: any) => dbToPostReaction(r, currentUserId)),
+        replyCount
+      }
+    }) || []
+    
+    setAnonymousPosts(posts)
   }
 
   // Setup real-time subscriptions
@@ -705,6 +821,151 @@ export default function useSupabaseData() {
     }
   }, [])
 
+  // Anonymous Chat Functions
+  const createAnonymousPost = useCallback(async (content: string, parentPostId?: string) => {
+    try {
+      const currentUserId = getDeviceUserId()
+      
+      // Validate content length
+      if (content.length < 10 || content.length > 250) {
+        throw new Error("Post must be between 10 and 250 characters")
+      }
+
+      const { error } = await supabase.from("anonymous_posts").insert({
+        user_id: currentUserId,
+        content: content.trim(),
+        parent_post_id: parentPostId || null,
+      })
+
+      if (error) throw error
+      
+      // Reload anonymous posts
+      await loadAllData("anonymous_posts", true)
+      return { success: true, error: null }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Failed to create post"
+      }
+    }
+  }, [loadAllData])
+
+  const deleteAnonymousPost = useCallback(async (postId: string) => {
+    try {
+      const currentUserId = getDeviceUserId()
+      
+      // Soft delete - mark as deleted
+      const { error } = await supabase
+        .from("anonymous_posts")
+        .update({ 
+          is_deleted: true, 
+          deleted_at: new Date().toISOString() 
+        })
+        .eq("id", postId)
+        .eq("user_id", currentUserId)
+
+      if (error) throw error
+      
+      // Reload anonymous posts
+      await loadAllData("anonymous_posts", true)
+      return { success: true, error: null }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Failed to delete post"
+      }
+    }
+  }, [loadAllData])
+
+  const togglePostReaction = useCallback(async (postId: string, reactionEmoji: string) => {
+    try {
+      const currentUserId = getDeviceUserId()
+      const allowedReactions = ['😂', '😭', '😱', '❤️', '👍', '🔥', '💀', '💯']
+      
+      if (!allowedReactions.includes(reactionEmoji)) {
+        throw new Error("Invalid reaction")
+      }
+
+      // Check if user already reacted with this emoji
+      const { data: existingReaction } = await supabase
+        .from("post_reactions")
+        .select("*")
+        .eq("post_id", postId)
+        .eq("user_id", currentUserId)
+        .eq("reaction_emoji", reactionEmoji)
+        .single()
+
+      if (existingReaction) {
+        // Remove reaction
+        const { error } = await supabase
+          .from("post_reactions")
+          .delete()
+          .eq("id", existingReaction.id)
+        
+        if (error) throw error
+      } else {
+        // Add reaction
+        const { error } = await supabase
+          .from("post_reactions")
+          .insert({
+            post_id: postId,
+            user_id: currentUserId,
+            reaction_emoji: reactionEmoji,
+          })
+        
+        if (error) throw error
+      }
+      
+      // Reload anonymous posts
+      await loadAllData("anonymous_posts", true)
+      return { success: true, error: null }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Failed to toggle reaction"
+      }
+    }
+  }, [loadAllData])
+
+  const getPostReplies = useCallback(async (postId: string): Promise<AnonymousPost[]> => {
+    try {
+      const currentUserId = getDeviceUserId()
+      
+      const { data, error } = await supabase
+        .from("anonymous_posts")
+        .select("*")
+        .eq("parent_post_id", postId)
+        .order("created_at", { ascending: true })
+        .limit(10)
+
+      if (error) throw error
+
+      // Get reactions for replies
+      const replyIds = data?.map(reply => reply.id) || []
+      let reactionsResult: any = { data: [] }
+      if (replyIds.length > 0) {
+        reactionsResult = await supabase
+          .from("post_reactions")
+          .select("*")
+          .in("post_id", replyIds)
+      }
+
+      const replies = data?.map(reply => {
+        const replyReactions = reactionsResult.data?.filter((r: any) => r.post_id === reply.id) || []
+        return {
+          ...dbToAnonymousPost(reply, currentUserId),
+          reactions: replyReactions.map((r: any) => dbToPostReaction(r, currentUserId)),
+          replyCount: 0 // Replies don't have replies
+        }
+      }) || []
+
+      return replies
+    } catch (err) {
+      console.error("Failed to get post replies:", err)
+      return []
+    }
+  }, [])
+
   return {
     // Data
     laundry,
@@ -712,6 +973,7 @@ export default function useSupabaseData() {
     announcements,
     helpMe,
     incidents,
+    anonymousPosts,
 
     // State
     isLoading,
@@ -728,6 +990,13 @@ export default function useSupabaseData() {
     addHelpRequest,
     deleteHelpRequest,
     deleteIncident,
+    
+    // Anonymous Chat Operations
+    createAnonymousPost,
+    deleteAnonymousPost,
+    togglePostReaction,
+    getPostReplies,
+    
     refreshData: () => loadAllData(undefined, true),
   }
 }

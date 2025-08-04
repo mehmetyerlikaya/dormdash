@@ -7,8 +7,12 @@ export function getDeviceUserId(): string {
     let userId = localStorage.getItem("dorm-dashboard-user-id")
 
     if (!userId) {
-      // Generate a random 4-digit number
-      const randomNum = Math.floor(Math.random() * 10000)
+      // Use a more stable ID generation method to avoid hydration issues
+      // Use a combination of timestamp and a hash of user agent for consistency
+      const timestamp = Math.floor(Date.now() / 1000) // Use seconds instead of milliseconds for more stability
+      const userAgentHash = hashString(navigator.userAgent)
+      const stableRandom = ((timestamp * 9301 + userAgentHash * 49297) % 233280) / 233280
+      const randomNum = Math.floor(stableRandom * 10000)
       userId = `dormie-${randomNum.toString().padStart(4, "0")}`
       localStorage.setItem("dorm-dashboard-user-id", userId)
     }
@@ -53,7 +57,7 @@ function hashString(str: string): number {
     hash = (hash << 5) - hash + char
     hash = hash & hash // Convert to 32-bit integer
   }
-  return hash
+  return Math.abs(hash) // Ensure positive value
 }
 
 // Get a display name for the user

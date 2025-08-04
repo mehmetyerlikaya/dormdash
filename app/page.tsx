@@ -11,6 +11,7 @@ import DebugPanel from "@/src/components/DebugPanel"
 import useSupabaseData from "@/src/hooks/useSupabaseData"
 import { getUserDisplayName } from "@/src/utils/userIdentification"
 import UserSettings from "@/src/components/UserSettings"
+import AnonymousChatCard from "@/src/components/AnonymousChatCard"
 
 export default function Page() {
   const { refreshData, isLoading, error } = useSupabaseData()
@@ -81,17 +82,25 @@ export default function Page() {
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="flex flex-wrap justify-center gap-3">
             <button
+              onClick={() => document.getElementById('anonymous-chat')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              🔥🆕 Anonymous Chat
+            </button>
+            <button
               onClick={() => document.getElementById('laundry-machines')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
             >
               👕 Laundry Machines
             </button>
+            {/* Help Me button temporarily disabled
             <button
               onClick={() => document.getElementById('help-requests')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
             >
               🆘 Help Me
             </button>
+            */}
             <button
               onClick={() => document.getElementById('community-board')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md"
@@ -111,10 +120,19 @@ export default function Page() {
       {/* Connection Status - only shows errors */}
       <ConnectionTest />
 
+      {/* LaundryCard - Full width */}
       <DashboardGrid>
-        {/* Explicitly place LaundryCard first with a key */}
         <LaundryCard key="laundry-machines" />
-        <HelpMeCard key="help-requests" />
+      </DashboardGrid>
+
+      {/* Anonymous Chat - Full width section */}
+      <div className="w-full max-w-7xl mx-auto px-4 mb-12">
+        <AnonymousChatCard />
+      </div>
+
+      {/* Two cards - 2-column grid (Help Me temporarily disabled) */}
+      <DashboardGrid>
+        {/* <HelpMeCard key="help-requests" /> */}
         <AnnouncementsCard key="community-board" />
         <NoiseCard key="noise-reports" />
       </DashboardGrid>

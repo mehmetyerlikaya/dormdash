@@ -4,10 +4,12 @@ A real-time web app for managing dormitory laundry machines. Built with Next.js 
 
 ## Features
 
-- Real-time machine status updates
-- Check-in/out system for washers and dryers
-- Grace period notifications
-- Mobile-friendly interface
+- **Real-time machine status updates** - Live synchronization across all devices
+- **Check-in/out system** for washers and dryers with user ownership tracking
+- **Grace period notifications** - Automatic 5-minute grace period after cycle completion
+- **🔥 Anonymous Chat** - Real-time anonymous messaging system for dorm community
+- **Community features** - Help requests, announcements, and noise reports
+- **Mobile-friendly interface** - Responsive design optimized for all devices
 
 ## Tech Stack
 

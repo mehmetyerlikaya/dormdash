@@ -173,6 +173,10 @@ export default function LaundryCard() {
   const { laundry, incidents, deleteIncident, adjustMachineTime } = useSupabaseData()
   const [adjustModalOpen, setAdjustModalOpen] = useState(false)
   const [selectedMachine, setSelectedMachine] = useState<any>(null)
+  
+  // Collapsible sections state
+  const [washersExpanded, setWashersExpanded] = useState(true)
+  const [dryersExpanded, setDryersExpanded] = useState(true)
 
   // Count total incidents for the badge
   const totalIncidents = incidents.length
@@ -180,6 +184,19 @@ export default function LaundryCard() {
   // Washer/Dryer metrics
   const washers = laundry.filter(m => m.name.toLowerCase().includes('washer'));
   const dryers = laundry.filter(m => m.name.toLowerCase().includes('dryer'));
+
+  // Sort machines: washers 5-8 first, then dryers 1-4
+  const sortedWashers = washers.sort((a, b) => {
+    const aNum = parseInt(a.name.match(/\d+/)?.[0] || '0')
+    const bNum = parseInt(b.name.match(/\d+/)?.[0] || '0')
+    return aNum - bNum
+  })
+  
+  const sortedDryers = dryers.sort((a, b) => {
+    const aNum = parseInt(a.name.match(/\d+/)?.[0] || '0')
+    const bNum = parseInt(b.name.match(/\d+/)?.[0] || '0')
+    return aNum - bNum
+  })
 
   const availableWashers = washers.filter(m => m.status === 'free').length;
   const totalWashers = washers.length;
@@ -275,9 +292,199 @@ export default function LaundryCard() {
           )}
         </div>
       </div>
-      {/* Machines Grid - Better responsive layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {laundry.map((machine) => {
+      {/* Machines Display - Mobile-first design */}
+      <div className="space-y-6 lg:hidden">
+        {/* Washers Section */}
+        <div>
+          <button
+            onClick={() => setWashersExpanded(!washersExpanded)}
+            className="flex items-center justify-between w-full p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <WasherSVG className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold text-blue-800">Washers ({sortedWashers.length})</span>
+            </div>
+            <span className="text-blue-600">
+              {washersExpanded ? '▼' : '▶'}
+            </span>
+          </button>
+          
+          {washersExpanded && (
+            <div className="space-y-4 mt-4">
+              {sortedWashers.map((machine) => {
+                const machineIncidents = incidents.filter((inc) => inc.machineId === machine.id)
+                const isWasher = machine.name.toLowerCase().includes("washer")
+                const displayName = getDisplayName(machine)
+                const recentUpdateClasses = getRecentUpdateClasses(machine.updatedAt)
+
+                return (
+                  <div
+                    key={machine.id}
+                    className={`bg-white border-2 border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-accent/30 relative group ${recentUpdateClasses}`}
+                  >
+                    {/* Just Updated badge */}
+                    <JustUpdatedBadge machine={machine} />
+
+                    {/* Machine incidents badge */}
+                    {machineIncidents.length > 0 && (
+                      <div className="absolute -top-3 -right-3 z-10">
+                        <IncidentBadge incidents={machineIncidents} onDelete={deleteIncident} />
+                      </div>
+                    )}
+
+                    {/* Machine header - improved layout */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <WasherSVG className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 text-lg">{displayName}</h3>
+                          <MachineStatus machine={machine} />
+                        </div>
+                      </div>
+                      
+                      {/* Ownership badge for current user - temporarily deactivated */}
+                      {/* {isCurrentUserOwner(machine) && (
+                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 flex-shrink-0">
+                          Your machine
+                        </div>
+                      )} */}
+                    </div>
+
+                    {/* Machine details - improved layout and alignment */}
+                    <div className="space-y-3">
+                      {/* Time remaining - only show for running machines */}
+                      {machine.status === "running" && machine.endAt && (
+                        <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg">
+                          <span className="text-sm text-gray-600 font-medium">Time left</span>
+                          <span className="text-sm font-bold text-blue-600">
+                            {Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))} minutes
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Action buttons - improved alignment and spacing */}
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <TimeAdjustButton machine={machine} onAdjust={() => handleAdjustTime(machine)} />
+                          {/* OwnershipBadge temporarily deactivated */}
+                          {/* <OwnershipBadge machine={machine} /> */}
+                        </div>
+                        
+                        {/* Additional info for grace period */}
+                        {machine.status === "finishedGrace" && machine.graceEndAt && (
+                          <div className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                            Grace ends: {machine.graceEndAt?.toLocaleTimeString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Dryers Section */}
+        <div>
+          <button
+            onClick={() => setDryersExpanded(!dryersExpanded)}
+            className="flex items-center justify-between w-full p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <DryerOutlineSVG className="w-5 h-5 text-orange-600" />
+              <span className="font-semibold text-orange-800">Dryers ({sortedDryers.length})</span>
+            </div>
+            <span className="text-orange-600">
+              {dryersExpanded ? '▼' : '▶'}
+            </span>
+          </button>
+          
+          {dryersExpanded && (
+            <div className="space-y-4 mt-4">
+              {sortedDryers.map((machine) => {
+                const machineIncidents = incidents.filter((inc) => inc.machineId === machine.id)
+                const isWasher = machine.name.toLowerCase().includes("washer")
+                const displayName = getDisplayName(machine)
+                const recentUpdateClasses = getRecentUpdateClasses(machine.updatedAt)
+
+                return (
+                  <div
+                    key={machine.id}
+                    className={`bg-white border-2 border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-accent/30 relative group ${recentUpdateClasses}`}
+                  >
+                    {/* Just Updated badge */}
+                    <JustUpdatedBadge machine={machine} />
+
+                    {/* Machine incidents badge */}
+                    {machineIncidents.length > 0 && (
+                      <div className="absolute -top-3 -right-3 z-10">
+                        <IncidentBadge incidents={machineIncidents} onDelete={deleteIncident} />
+                      </div>
+                    )}
+
+                    {/* Machine header - improved layout */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <DryerOutlineSVG className="w-6 h-6 text-orange-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 text-lg">{displayName}</h3>
+                          <MachineStatus machine={machine} />
+                        </div>
+                      </div>
+                      
+                      {/* Ownership badge for current user - temporarily deactivated */}
+                      {/* {isCurrentUserOwner(machine) && (
+                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 flex-shrink-0">
+                          Your machine
+                        </div>
+                      )} */}
+                    </div>
+
+                    {/* Machine details - improved layout and alignment */}
+                    <div className="space-y-3">
+                      {/* Time remaining - only show for running machines */}
+                      {machine.status === "running" && machine.endAt && (
+                        <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg">
+                          <span className="text-sm text-gray-600 font-medium">Time left</span>
+                          <span className="text-sm font-bold text-blue-600">
+                            {Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))} minutes
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Action buttons - improved alignment and spacing */}
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <TimeAdjustButton machine={machine} onAdjust={() => handleAdjustTime(machine)} />
+                          {/* OwnershipBadge temporarily deactivated */}
+                          {/* <OwnershipBadge machine={machine} /> */}
+                        </div>
+                        
+                        {/* Additional info for grace period */}
+                        {machine.status === "finishedGrace" && machine.graceEndAt && (
+                          <div className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                            Grace ends: {machine.graceEndAt?.toLocaleTimeString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop: Original grid layout */}
+      <div className="hidden lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {/* Washers first, then dryers */}
+        {[...sortedWashers, ...sortedDryers].map((machine) => {
           const machineIncidents = incidents.filter((inc) => inc.machineId === machine.id)
           const isWasher = machine.name.toLowerCase().includes("washer")
           const displayName = getDisplayName(machine)
@@ -298,14 +505,14 @@ export default function LaundryCard() {
                 </div>
               )}
               
-              {/* "Your Machine" badge in top right corner when active */}
-              {isCurrentUserOwner(machine) && (machine.status === "running" || machine.status === "finishedGrace") && (
+              {/* "Your Machine" badge in top right corner when active - temporarily deactivated */}
+              {/* {isCurrentUserOwner(machine) && (machine.status === "running" || machine.status === "finishedGrace") && (
                 <div className="absolute top-2 right-2 z-10">
                   <div className="bg-purple-600 text-white px-2 py-1 rounded-md text-xs font-medium shadow-sm">
                     Your Machine
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* Machine illustration */}
               <div className="flex justify-center mb-6">
@@ -318,10 +525,10 @@ export default function LaundryCard() {
               <div className="text-center mb-4">
                 <h3 className="font-bold text-primary text-xl mb-1">{displayName}</h3>
                 {/* <TimeAgoDisplay machine={machine} /> */}
-                {/* Ownership badge */}
-                <div className="mt-2">
+                {/* Ownership badge - temporarily deactivated */}
+                {/* <div className="mt-2">
                   <OwnershipBadge machine={machine} />
-                </div>
+                </div> */}
               </div>
 
               {/* Status section */}

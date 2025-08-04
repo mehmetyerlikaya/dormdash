@@ -184,12 +184,12 @@ export default function CheckInPage() {
     const originalNumber = numberMatch ? Number.parseInt(numberMatch[0]) : 0
     if (isWasher) {
       // Map Washer 1-4 to Washer #5-8
-      const washerMap = { 1: 5, 2: 6, 3: 7, 4: 8 }
+      const washerMap: Record<number, number> = { 1: 5, 2: 6, 3: 7, 4: 8 }
       const newNumber = washerMap[String(originalNumber)] || originalNumber
       return `Washer #${newNumber}`
     } else {
       // Map Dryer 5-8 to Dryer #1-4
-      const dryerMap = { 5: 1, 6: 2, 7: 3, 8: 4 }
+      const dryerMap: Record<number, number> = { 5: 1, 6: 2, 7: 3, 8: 4 }
       const newNumber = dryerMap[String(originalNumber)] || originalNumber
       return `Dryer #${newNumber}`
     }
@@ -344,7 +344,7 @@ export default function CheckInPage() {
               <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="text-sm font-medium text-blue-800 mb-2">Adjust Timer</div>
                 <div className="text-xs text-blue-600 mb-3">
-                  Current: {machine.endAt ? Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60))) : 0} minutes remaining
+                  Current: {isClient && machine.endAt ? Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60))) : 0} minutes remaining
                 </div>
 
                 <div className="flex items-center gap-2 mb-3">

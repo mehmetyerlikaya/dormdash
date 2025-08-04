@@ -57,18 +57,20 @@ export default function DashboardGrid({ children }: DashboardGridProps) {
   return (
     <div className="w-full max-w-7xl mx-auto px-4">
       {/* 1. Full-width Laundry section - MUST be alone in first row */}
-      {laundryCard ? (
+      {laundryCard && (
         <div className="w-full mb-12">
           <div className="bg-gradient-to-br from-bgLight to-white rounded-2xl p-2 shadow-sm">{laundryCard}</div>
         </div>
-      ) : (
-        <div className="w-full mb-12 p-8 bg-red-100 border border-red-300 rounded-lg">
-          <p className="text-red-700">⚠️ LaundryCard not found! Check component filtering logic.</p>
-        </div>
       )}
 
-      {/* 2. Three equal columns for remaining cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">{otherCards}</div>
+      {/* 2. Dynamic grid for remaining cards */}
+      {otherCards.length > 0 && (
+        <div className={`grid grid-cols-1 gap-8 ${
+          otherCards.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
+        }`}>
+          {otherCards}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import type { Machine } from "@/src/hooks/useSupabaseData"
+import { useState, useEffect } from "react"
+import { Machine } from "@/lib/supabase"
 
 interface TimeAdjustmentModalProps {
   machine: Machine
@@ -14,13 +14,30 @@ export default function TimeAdjustmentModal({ machine, isOpen, onClose, onAdjust
   const [minutes, setMinutes] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [message, setMessage] = useState("")
+  const [currentMinutesLeft, setCurrentMinutesLeft] = useState(0)
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure component only runs on client to avoid hydration issues
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // Calculate current remaining time only on client
+  useEffect(() => {
+    if (isClient && machine.endAt) {
+      const calculateTime = () => {
+        const minutesLeft = Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))
+        setCurrentMinutesLeft(minutesLeft)
+      }
+      
+      calculateTime()
+      // Update every minute
+      const interval = setInterval(calculateTime, 60000)
+      return () => clearInterval(interval)
+    }
+  }, [isClient, machine.endAt])
 
   if (!isOpen) return null
-
-  // Calculate current remaining time
-  const currentMinutesLeft = machine.endAt 
-    ? Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))
-    : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,7 +94,7 @@ export default function TimeAdjustmentModal({ machine, isOpen, onClose, onAdjust
             <strong>{machine.name}</strong>
           </p>
           <p className="text-sm text-blue-700 font-semibold mb-2">
-            Current: <span className="font-bold">{currentMinutesLeft} minutes left</span>
+            Current: <span className="font-bold">{isClient ? `${currentMinutesLeft} minutes left` : 'Calculating...'}</span>
           </p>
           <p className="text-sm text-gray-500">
             Set the total time left for this machine.
