@@ -12,6 +12,7 @@ import useSupabaseData from "@/src/hooks/useSupabaseData"
 import { getUserDisplayName } from "@/src/utils/userIdentification"
 import UserSettings from "@/src/components/UserSettings"
 import AnonymousChatCard from "@/src/components/AnonymousChatCard"
+import { trackUserVisit } from "@/src/utils/analytics"
 
 export default function Page() {
   const { refreshData, isLoading, error } = useSupabaseData()
@@ -23,6 +24,8 @@ export default function Page() {
   useEffect(() => {
     setIsClient(true)
     setUserName(getUserDisplayName())
+    // Track user visit for analytics
+    trackUserVisit()
   }, [])
 
   if (error) {

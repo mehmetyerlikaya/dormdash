@@ -198,6 +198,79 @@ export interface Database {
           created_at?: string
         }
       }
+      user_analytics: {
+        Row: {
+          id: string
+          device_user_id: string
+          session_id: string
+          first_visit_at: string
+          last_visit_at: string
+          total_visits: number
+          total_session_time: number
+          device_type: string | null
+          browser_info: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          device_user_id: string
+          session_id: string
+          first_visit_at?: string
+          last_visit_at?: string
+          total_visits?: number
+          total_session_time?: number
+          device_type?: string | null
+          browser_info?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          device_user_id?: string
+          session_id?: string
+          first_visit_at?: string
+          last_visit_at?: string
+          total_visits?: number
+          total_session_time?: number
+          device_type?: string | null
+          browser_info?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      },
+      feature_usage: {
+        Row: {
+          id: string
+          device_user_id: string
+          feature_name: string
+          action_type: string
+          machine_id: string | null
+          post_id: string | null
+          metadata: any | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          device_user_id: string
+          feature_name: string
+          action_type: string
+          machine_id?: string | null
+          post_id?: string | null
+          metadata?: any | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          device_user_id?: string
+          feature_name?: string
+          action_type?: string
+          machine_id?: string | null
+          post_id?: string | null
+          metadata?: any | null
+          created_at?: string
+        }
+      },
     }
   }
 }
