@@ -124,36 +124,26 @@ function MachineStatus({ machine }: { machine: any }) {
   }
 
   if (machine.status === "running" && machine.endAt) {
-    const hours = Math.floor(countdown.secondsLeft / 3600)
-    const minutes = Math.floor((countdown.secondsLeft % 3600) / 60)
-    const seconds = countdown.secondsLeft % 60
     const isOwner = machine.startedByUserId === getDeviceUserId()
 
     return (
       <div className="flex items-center justify-center">
         <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 border-2 border-blue-200">
           <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-          {isOwner ? "In Use" : "Busy"} - {hours}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")} left
+          {isOwner ? "In Use" : "Busy"}
         </span>
       </div>
     )
   }
 
   if (machine.status === "finishedGrace") {
-    let graceTimeDisplay = "5:00"
     const isOwner = machine.startedByUserId === getDeviceUserId()
-
-    if (machine.graceEndAt) {
-      const minutes = Math.floor(countdown.graceSecondsLeft / 60)
-      const seconds = countdown.graceSecondsLeft % 60
-      graceTimeDisplay = `${minutes}:${seconds.toString().padStart(2, "0")}`
-    }
 
     return (
       <div className="flex items-center justify-center">
         <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-orange-100 text-orange-800 border-2 border-orange-200 animate-pulse-slow">
           <span className="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></span>
-          {isOwner ? "Collect items" : "Busy"} - {graceTimeDisplay}
+          {isOwner ? "Collect items" : "Busy"}
         </span>
       </div>
     )
@@ -345,23 +335,31 @@ export default function LaundryCard() {
                       </div>
                       
                       {/* Ownership badge for current user - temporarily deactivated */}
-                      {/* {isCurrentUserOwner(machine) && (
+                      {isCurrentUserOwner(machine) && (
                         <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 flex-shrink-0">
                           Your machine
                         </div>
-                      )} */}
+                      )}
                     </div>
 
                     {/* Machine details - improved layout and alignment */}
                     <div className="space-y-3">
                       {/* Time remaining - only show for running machines */}
                       {machine.status === "running" && machine.endAt && (
-                        <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg">
-                          <span className="text-sm text-gray-600 font-medium">Time left</span>
-                          <span className="text-sm font-bold text-blue-600">
-                            {Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))} minutes
-                          </span>
-                        </div>
+                        <>
+                          <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg">
+                            <span className="text-sm text-gray-600 font-medium">Time left</span>
+                            <span className="text-sm font-bold text-blue-600">
+                              {Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))} minutes
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600 font-medium">Will end</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {machine.endAt?.toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </>
                       )}
 
                       {/* Action buttons - improved alignment and spacing */}
@@ -438,23 +436,31 @@ export default function LaundryCard() {
                       </div>
                       
                       {/* Ownership badge for current user - temporarily deactivated */}
-                      {/* {isCurrentUserOwner(machine) && (
+                      {isCurrentUserOwner(machine) && (
                         <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 flex-shrink-0">
                           Your machine
                         </div>
-                      )} */}
+                      )}
                     </div>
 
                     {/* Machine details - improved layout and alignment */}
                     <div className="space-y-3">
                       {/* Time remaining - only show for running machines */}
                       {machine.status === "running" && machine.endAt && (
-                        <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg">
-                          <span className="text-sm text-gray-600 font-medium">Time left</span>
-                          <span className="text-sm font-bold text-blue-600">
-                            {Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))} minutes
-                          </span>
-                        </div>
+                        <>
+                          <div className="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg">
+                            <span className="text-sm text-gray-600 font-medium">Time left</span>
+                            <span className="text-sm font-bold text-blue-600">
+                              {Math.max(0, Math.ceil((machine.endAt.getTime() - Date.now()) / (1000 * 60)))} minutes
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600 font-medium">Will end</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {machine.endAt?.toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </>
                       )}
 
                       {/* Action buttons - improved alignment and spacing */}
@@ -506,13 +512,13 @@ export default function LaundryCard() {
               )}
               
               {/* "Your Machine" badge in top right corner when active - temporarily deactivated */}
-              {/* {isCurrentUserOwner(machine) && (machine.status === "running" || machine.status === "finishedGrace") && (
+              {isCurrentUserOwner(machine) && (machine.status === "running" || machine.status === "finishedGrace") && (
                 <div className="absolute top-2 right-2 z-10">
                   <div className="bg-purple-600 text-white px-2 py-1 rounded-md text-xs font-medium shadow-sm">
                     Your Machine
                   </div>
                 </div>
-              )} */}
+              )}
 
               {/* Machine illustration */}
               <div className="flex justify-center mb-6">
